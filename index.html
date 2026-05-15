@@ -3,64 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Queue System - Multi-Device Sync</title>
-    <!-- Firebase SDK -->
+    <title>Smart Queue Online</title>
+    
+    <!-- นำเข้า Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <!-- 1. เปลี่ยน Font เป็น 'Mitr' ให้ดูทันสมัย -->
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;500;600&display=swap" rel="stylesheet">
+
+    <!-- 2. ส่วน CSS (ปรับแต่งหน้าตาใหม่ทั้งหมดที่นี่) -->
     <style>
-        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --dark: #1a1d20; }
-        body { font-family: 'Kanit', sans-serif; background: #f0f4f8; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; color: #333; }
-        .container { background: white; width: 95%; max-width: 500px; padding: 2.5rem; border-radius: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); text-align: center; border: 1px solid rgba(255,255,255,0.8); }
-        .status-indicator { display: inline-flex; align-items: center; padding: 6px 16px; background: #e1f5fe; color: #0288d1; border-radius: 50px; font-size: 0.85rem; margin-bottom: 1.5rem; font-weight: 500; }
-        .status-dot { height: 8px; width: 8px; background-color: #0288d1; border-radius: 50%; display: inline-block; margin-right: 8px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        :root {
+            --primary: #007bff;   /* เปลี่ยนสีหลักตรงนี้ */
+            --success: #28a745;
+            --bg-color: #f0f4f8;
+        }
+
+        body { 
+            font-family: 'Mitr', sans-serif; 
+            background-color: var(--bg-color);
+            margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; 
+        }
+
+        .container { 
+            background: white; width: 90%; max-width: 420px; padding: 2.5rem; 
+            border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
+            text-align: center; border-top: 10px solid var(--primary);
+        }
+
+        /* ส่วนของ LOGO */
+        .logo-img {
+            width: 200px; /* ปรับขนาดโลโก้ */
+            height: auto;
+            margin-bottom: 15px;
+        }
+
+        .display-box { 
+            background: #1a1a1a; color: #00ff88; padding: 2rem 1rem; 
+            border-radius: 20px; margin: 1.5rem 0; 
+        }
+
+        .q-number { 
+            font-size: 8.5rem; font-weight: 600; line-height: 1; margin: 0; 
+            font-family: sans-serif; /* เลขคิวใช้ font พื้นฐานเพื่อให้ชัดเจน */
+        }
+
+        .btn { 
+            width: 100%; padding: 1.2rem; font-size: 1.5rem; border: none; 
+            border-radius: 15px; cursor: pointer; margin-bottom: 12px; 
+            font-weight: 500; transition: 0.3s; font-family: 'Mitr', sans-serif;
+        }
+
+        .btn-next { background: var(--success); color: white; box-shadow: 0 5px 15px rgba(40,167,69,0.3); }
+        .btn-next:active { transform: scale(0.95); }
+
+        .flex-row { display: flex; gap: 10px; }
+        .btn-small { flex: 1; font-size: 1rem; padding: 1rem; }
+        .btn-recall { background: #ffc107; color: #333; }
+        .btn-back { background: #f8f9fa; color: #666; border: 1px solid #ddd; }
         
-        .display-unit { background: var(--dark); color: #00ff88; padding: 3.5rem 1rem; border-radius: 25px; margin-bottom: 2rem; position: relative; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-        .display-unit::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(255,255,255,0.05) 50%, transparent 50%); background-size: 100% 4px; pointer-events: none; }
-        .label { font-size: 1.1rem; color: #aaa; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 0.5rem; }
-        .q-number { font-size: 10rem; font-weight: 700; line-height: 1; margin: 0; font-family: 'Courier New', Courier, monospace; }
-        
-        .main-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        .btn { border: none; border-radius: 18px; cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); font-family: 'Kanit', sans-serif; font-weight: 600; display: flex; align-items: center; justify-content: center; }
-        .btn:active { transform: scale(0.94); }
-        
-        .btn-next { grid-column: span 2; padding: 1.5rem; font-size: 1.8rem; background: var(--success); color: white; box-shadow: 0 8px 20px rgba(40,167,69,0.3); }
-        .btn-back { padding: 1.2rem; font-size: 1.1rem; background: #f8f9fa; color: var(--danger); border: 2px solid #eee; }
-        .btn-recall { padding: 1.2rem; font-size: 1.1rem; background: var(--warning); color: #222; }
-        .btn-reset { margin-top: 20px; background: transparent; color: #ccc; font-size: 0.9rem; text-decoration: underline; }
-        
-        .tip { font-size: 0.85rem; color: #999; margin-top: 20px; }
+        .reset-link { color: #ccc; font-size: 0.8rem; cursor: pointer; text-decoration: underline; margin-top: 15px; display: block; }
     </style>
 </head>
+
 <body>
 
 <div class="container">
-    <div class="status-indicator"><span class="status-dot"></span> จัดทำเพื่อเรียกคิวถ่ายภาพ</div>
+    <!-- ใส่ลิงก์รูปโลโก้ของคุณใน src="..." -->
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Amarin_TV_HD_34_Logo.svg/1280px-Amarin_TV_HD_34_Logo.svg.png" class="logo-img" alt="Logo">
     
-    <div class="display-unit">
-        <div class="label">Current Queue</div>
+    <div style="font-size: 0.9rem; color: #28a745; font-weight: 500;">● TOEY MARKETING AMARINTV</div>
+
+    <div class="display-box">
+        <div style="color: #888; font-size: 1rem; letter-spacing: 2px;">หมายเลขคิว</div>
         <div class="q-number" id="qText">00</div>
     </div>
 
-    <div class="main-controls">
-        <!-- ปุ่มหลัก: เรียกคิวใหม่ -->
-        <button class="btn btn-next" onclick="handleNext()">เรียกคิวถัดไป</button>
-        
-        <!-- ปุ่มรอง: เรียกย้อนหลัง -->
-        <button class="btn btn-back" onclick="handleBack()">เรียกย้อนหลัง</button>
-        
-        <!-- ปุ่มรอง: เรียกซ้ำ (ดังทุกเครื่อง) -->
-        <button class="btn btn-recall" onclick="handleRecall()">เรียกซ้ำอีกครั้ง</button>
+    <button class="btn btn-next" onclick="handleNext()">เรียกคิวถัดไป</button>
+    
+    <div class="flex-row">
+        <button class="btn btn-small btn-back" onclick="handleBack()">ย้อนหลัง</button>
+        <button class="btn btn-small btn-recall" onclick="handleRecall()">เรียกซ้ำ</button>
     </div>
 
-    <button class="btn-reset" onclick="handleReset()">รีเซ็ตหมายเลขทั้งหมด</button>
-    
-    <div class="tip">จัดทำโดย Piyawat ฝ่าย Marketing</div>
+    <span class="reset-link" onclick="handleReset()">เริ่มนับคิวใหม่</span>
 </div>
 
 <script>
-    // 1. วางค่า Firebase Config ของคุณตรงนี้
+    // --- อย่าลืมวาง Config ของคุณตรงนี้ ---
 const firebaseConfig = {
   apiKey: "AIzaSyByZGfAdvDkBvNTEfAodf56hJdIUxZ4X58",
   authDomain: "run-queue.firebaseapp.com",
@@ -77,68 +108,49 @@ const firebaseConfig = {
     const qRef = db.ref('current_queue');
     const recallRef = db.ref('recall_trigger');
 
-    // 2. รับข้อมูล Realtime (อัปเดตตัวเลขหน้าจอ)
+    // อัปเดตตัวเลข
     qRef.on('value', (snapshot) => {
         const val = snapshot.val() || 0;
         document.getElementById('qText').innerText = val.toString().padStart(2, '0');
     });
 
-    // 3. หัวใจสำคัญ: รับสัญญาณเพื่อ "พูด" พร้อมกันทุกเครื่อง
-    // เมื่อมีการเปลี่ยนค่าใน recall_trigger ทุกเครื่องที่เปิดอยู่จะรันฟังก์ชัน speak()
+    // ระบบเรียกเสียงพร้อมกันทุกเครื่อง
     recallRef.on('value', (snapshot) => {
-        if (snapshot.exists()) {
-            speak();
-        }
+        if (snapshot.exists()) { speak(); }
     });
-
-    // --- ฟังก์ชันการทำงาน ---
 
     function handleNext() {
         qRef.transaction((current) => (current || 0) + 1);
-        // หลังจากบวกเลขเสร็จ ให้ส่งสัญญาณพูด
-        setTimeout(handleRecall, 300);
+        setTimeout(handleRecall, 400);
     }
 
     function handleBack() {
         qRef.transaction((current) => {
-            const next = (current || 0) - 1;
-            return next < 0 ? 0 : next; // ไม่ให้ติดลบ
+            const n = (current || 0) - 1;
+            return n < 0 ? 0 : n;
         });
-        // หลังจากลบเลขเสร็จ ให้ส่งสัญญาณพูด
-        setTimeout(handleRecall, 300);
+        setTimeout(handleRecall, 400);
     }
 
     function handleRecall() {
-        // ส่ง timestamp ปัจจุบันเพื่อให้ข้อมูลใน Firebase เปลี่ยนแปลงเสมอ
         recallRef.set(Date.now());
     }
 
     function handleReset() {
-        if(confirm("ต้องการล้างคิวกลับไปเริ่มต้นที่ 0 ใช่หรือไม่?")) {
-            qRef.set(0);
-            recallRef.remove();
-        }
+        if(confirm("รีเซ็ตคิวเป็น 0?")) { qRef.set(0); recallRef.remove(); }
     }
 
     function speak() {
         const num = document.getElementById('qText').innerText;
         if(num === "00") return;
-        
-        const msg = new SpeechSynthesisUtterance();
-        msg.text = `ขอเชิญหมายเลข ${parseInt(num)}เพื่อมาถ่ายภาพ`;
+        const msg = new SpeechSynthesisUtterance(`ขอเชิญหมายเลข ${parseInt(num)} ค่ะ`);
         msg.lang = 'th-TH';
-        msg.rate = 0.7;
-
-        // ค้นหาเสียงไทยเพื่อให้เสียงออกมาถูกต้องที่สุด
         const voices = window.speechSynthesis.getVoices();
         const thaiVoice = voices.find(v => v.lang.includes('th'));
         if (thaiVoice) msg.voice = thaiVoice;
-
-        window.speechSynthesis.cancel(); // เคลียร์คิวเสียงเก่า
+        window.speechSynthesis.cancel();
         window.speechSynthesis.speak(msg);
     }
-
-    // เตรียมเสียงให้พร้อมสำหรับบาง Browser
     window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
 </script>
 
