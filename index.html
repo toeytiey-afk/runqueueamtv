@@ -36,7 +36,7 @@
 <body>
 
 <div class="container">
-    <div class="status-indicator"><span class="status-dot"></span> Online & Synchronized</div>
+    <div class="status-indicator"><span class="status-dot"></span> จัดทำเพื่อเรียกคิวถ่ายภาพ</div>
     
     <div class="display-unit">
         <div class="label">Current Queue</div>
@@ -125,9 +125,9 @@ const firebaseConfig = {
         if(num === "00") return;
         
         const msg = new SpeechSynthesisUtterance();
-        msg.text = `ขอเชิญหมายเลข ${parseInt(num)}`;
+        msg.text = `ขอเชิญหมายเลข ${parseInt(num)}เพื่อมาถ่ายภาพ`;
         msg.lang = 'th-TH';
-        msg.rate = 0.5;
+        msg.rate = 0.7;
 
         // ค้นหาเสียงไทยเพื่อให้เสียงออกมาถูกต้องที่สุด
         const voices = window.speechSynthesis.getVoices();
