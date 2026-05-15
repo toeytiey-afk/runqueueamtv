@@ -61,26 +61,16 @@
 
 <script>
     // 1. วางค่า Firebase Config ของคุณตรงนี้
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyDBCYAVrWxB1n2kAoy0cKhVy0djgBCF-zg",
   authDomain: "runqueue25.firebaseapp.com",
   projectId: "runqueue25",
   storageBucket: "runqueue25.firebasestorage.app",
   messagingSenderId: "304065744638",
-  appId: "1:304065744638:web:365e6b83e15a2be9ed9faf",
-  measurementId: "G-LZXT55K30N"
+  appId: "1:304065744638:web:c8c9db9baef2663eed9faf",
+  measurementId: "G-M5H44CJXWK"
 };
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -135,9 +125,9 @@ const analytics = getAnalytics(app);
         if(num === "00") return;
         
         const msg = new SpeechSynthesisUtterance();
-        msg.text = `ขอเชิญหมายเลข ${parseInt(num)} ค่ะ`;
+        msg.text = `ขอเชิญหมายเลข ${parseInt(num)}`;
         msg.lang = 'th-TH';
-        msg.rate = 1.0;
+        msg.rate = 0.5;
 
         // ค้นหาเสียงไทยเพื่อให้เสียงออกมาถูกต้องที่สุด
         const voices = window.speechSynthesis.getVoices();
