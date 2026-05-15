@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Queue Online</title>
+    
+    <!-- นำเข้า Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <!-- 1. เปลี่ยน Font เป็น 'Mitr' ให้ดูทันสมัย -->
+    <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;500;600&display=swap" rel="stylesheet">
+
+    <!-- 2. ส่วน CSS (ปรับแต่งหน้าตาใหม่ทั้งหมดที่นี่) -->
+    <style>
+        :root {
+            --primary: #007bff;   /* เปลี่ยนสีหลักตรงนี้ */
+            --success: #28a745;
+            --bg-color: #f0f4f8;
+        }
+
+        body { 
+            font-family: 'Mitr', sans-serif; 
+            background-color: var(--bg-color);
+            margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; 
+        }
+
+        .container { 
+            background: white; width: 90%; max-width: 420px; padding: 2.5rem; 
+            border-radius: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); 
+            text-align: center; border-top: 10px solid var(--primary);
+        }
+
+        /* ส่วนของ LOGO */
+        .logo-img {
+            width: 200px; /* ปรับขนาดโลโก้ */
+            height: auto;
+            margin-bottom: 15px;
+        }
+
+        .display-box { 
+            background: #1a1a1a; color: #00ff88; padding: 2rem 1rem; 
+            border-radius: 20px; margin: 1.5rem 0; 
+        }
+
+        .q-number { 
+            font-size: 8.5rem; font-weight: 600; line-height: 1; margin: 0; 
+            font-family: sans-serif; /* เลขคิวใช้ font พื้นฐานเพื่อให้ชัดเจน */
+        }
+
+        .btn { 
+            width: 100%; padding: 1.2rem; font-size: 1.5rem; border: none; 
+            border-radius: 15px; cursor: pointer; margin-bottom: 12px; 
+            font-weight: 500; transition: 0.3s; font-family: 'Mitr', sans-serif;
+        }
+
+        .btn-next { background: var(--success); color: white; box-shadow: 0 5px 15px rgba(40,167,69,0.3); }
+        .btn-next:active { transform: scale(0.95); }
+
+        .flex-row { display: flex; gap: 10px; }
+        .btn-small { flex: 1; font-size: 1rem; padding: 1rem; }
+        .btn-recall { background: #ffc107; color: #333; }
+        .btn-back { background: #f8f9fa; color: #666; border: 1px solid #ddd; }
+        
+        .reset-link { color: #ccc; font-size: 0.8rem; cursor: pointer; text-decoration: underline; margin-top: 15px; display: block; }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <!-- ใส่ลิงก์รูปโลโก้ของคุณใน src="..." -->
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Amarin_TV_HD_34_Logo.svg/1280px-Amarin_TV_HD_34_Logo.svg.png" class="logo-img" alt="Logo">
+    
+    <div style="font-size: 0.9rem; color: #28a745; font-weight: 500;">● TOEY MARKETING AMARINTV</div>
+
+    <div class="display-box">
+        <div style="color: #888; font-size: 1rem; letter-spacing: 2px;">หมายเลขคิว</div>
+        <div class="q-number" id="qText">00</div>
+    </div>
+
+    <button class="btn btn-next" onclick="handleNext()">เรียกคิวถัดไป</button>
+    
+    <div class="flex-row">
+        <button class="btn btn-small btn-back" onclick="handleBack()">ย้อนหลัง</button>
+        <button class="btn btn-small btn-recall" onclick="handleRecall()">เรียกซ้ำ</button>
+    </div>
+
+    <span class="reset-link" onclick="handleReset()">เริ่มนับคิวใหม่</span>
+</div>
+
+<script>
+    // --- อย่าลืมวาง Config ของคุณตรงนี้ ---
+const firebaseConfig = {
+  apiKey: "AIzaSyByZGfAdvDkBvNTEfAodf56hJdIUxZ4X58",
+  authDomain: "run-queue.firebaseapp.com",
+  databaseURL: "https://run-queue-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "run-queue",
+  storageBucket: "run-queue.firebasestorage.app",
+  messagingSenderId: "975885542561",
+  appId: "1:975885542561:web:e88c2c5723a3fd604abce0",
+  measurementId: "G-1HSEHL6NH2"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const qRef = db.ref('current_queue');
+    const recallRef = db.ref('recall_trigger');
+
+    // อัปเดตตัวเลข
+    qRef.on('value', (snapshot) => {
+        const val = snapshot.val() || 0;
+        document.getElementById('qText').innerText = val.toString().padStart(2, '0');
+    });
+
+    // ระบบเรียกเสียงพร้อมกันทุกเครื่อง
+    recallRef.on('value', (snapshot) => {
+        if (snapshot.exists()) { speak(); }
+    });
+
+    function handleNext() {
+        qRef.transaction((current) => (current || 0) + 1);
+        setTimeout(handleRecall, 400);
+    }
+
+    function handleBack() {
+        qRef.transaction((current) => {
+            const n = (current || 0) - 1;
+            return n < 0 ? 0 : n;
+        });
+        setTimeout(handleRecall, 400);
+    }
+
+    function handleRecall() {
+        recallRef.set(Date.now());
+    }
+
+    function handleReset() {
+        if(confirm("รีเซ็ตคิวเป็น 0?")) { qRef.set(0); recallRef.remove(); }
+    }
+
+    function speak() {
+        const num = document.getElementById('qText').innerText;
+        if(num === "00") return;
+        const msg = new SpeechSynthesisUtterance(`ขอเชิญหมายเลข ${parseInt(num)} ค่ะ`);
+        msg.lang = 'th-TH';
+        const voices = window.speechSynthesis.getVoices();
+        const thaiVoice = voices.find(v => v.lang.includes('th'));
+        if (thaiVoice) msg.voice = thaiVoice;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(msg);
+    }
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+</script>
+
+</body>
+</html>
