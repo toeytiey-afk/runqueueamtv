@@ -143,7 +143,7 @@ const firebaseConfig = {
     function speak() {
         const num = document.getElementById('qText').innerText;
         if(num === "00") return;
-        const msg = new SpeechSynthesisUtterance(`ขอเชิญหมายเลข ${parseInt(num)} ค่ะ`);
+        const msg = new SpeechSynthesisUtterance(`ขอเชิญหมายเลข ${parseInt(num)}`);
         msg.lang = 'th-TH';
         const voices = window.speechSynthesis.getVoices();
         const thaiVoice = voices.find(v => v.lang.includes('th'));
